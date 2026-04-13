@@ -23,6 +23,22 @@
 #include <vecmem/memory/host_memory_resource.hpp>
 #include <vecmem/memory/memory_resource.hpp>
 
+#include "full_chain_algorithm.hpp"
+#include "traccc/edm/silicon_cell_collection.hpp"
+#include "traccc/geometry/detector_design_description.hpp"
+#include "traccc/geometry/detector_conditions_description.hpp"
+#include "traccc/clusterization/clustering_config.hpp"
+#include "traccc/seeding/detail/seeding_config.hpp"
+#include "traccc/seeding/detail/track_params_estimation_config.hpp"
+#include "traccc/edm/track_collection.hpp"
+#include "traccc/io/read_magnetic_field.hpp"
+#include "traccc/cuda/finding/combinatorial_kalman_filter_algorithm.hpp"
+#include "traccc/cuda/fitting/kalman_fitting_algorithm.hpp"
+#include "traccc/io/read_detector_description.hpp"
+#include "traccc/geometry/detector_design_description.hpp"
+#include "traccc/geometry/detector_conditions_description.hpp"
+#include "traccc/io/read_cells.hpp"
+
 namespace py = pybind11;
 using namespace pybind11::literals;
 
@@ -97,7 +113,7 @@ PYBIND11_MODULE(ActsExamplesPythonBindingsTraccc, traccc) {
 
           using DetrayPropagator =
               DetrayPropagator<DetrayRknStepper, DetrayHostStore,
-                               Covfie::ConstantField>;
+                               Covfie::ConstantField::view_t>;
 
           DetrayPropagator::Config cfg{detrayStore, sterile, cfield};
           detrayPropagator = std::make_shared<DetrayPropagator>(cfg);
@@ -120,7 +136,7 @@ PYBIND11_MODULE(ActsExamplesPythonBindingsTraccc, traccc) {
 
           using DetrayPropagator =
               DetrayPropagator<DetrayRknStepper, DetrayHostStore,
-                               Covfie::InterpolatedField>;
+                               Covfie::InterpolatedField::view_t>;
 
           DetrayPropagator::Config cfg{detrayStore, sterile, std::move(ifield)};
           detrayPropagator = std::make_shared<DetrayPropagator>(cfg);
@@ -128,5 +144,108 @@ PYBIND11_MODULE(ActsExamplesPythonBindingsTraccc, traccc) {
           return detrayPropagator;
         });
   }
-  /// Define the DetrayPropagator with interpolated b field
+
+  /// Read magnetic field from file
+  {
+    py::class_<traccc::magnetic_field>(traccc, "MagneticField");
+
+    traccc.def("readMagneticField",
+      [](const std::string& field_file) -> traccc::magnetic_field {
+        traccc::magnetic_field field;
+        traccc::io::read_magnetic_field(field, field_file);
+        return field;
+      },
+      "field_file"_a);
+  }
+
+  /// Read detector description from files
+  {
+    py::class_<traccc::detector_design_description::host>(traccc, "DetectorDesignDescription");
+    py::class_<traccc::detector_conditions_description::host>(traccc, "DetectorConditionsDescription");
+
+    traccc.def("readDetectorDescription",
+      [](const std::string& detector_file,
+         const std::string& digitization_file,
+         const std::string& conditions_file) {
+        static vecmem::host_memory_resource mr;
+        traccc::detector_design_description::host det_descr{mr};
+        traccc::detector_conditions_description::host det_cond{mr};
+        traccc::io::read_detector_description(
+            det_descr, det_cond,
+            detector_file, digitization_file, conditions_file,
+            traccc::data_format::json);
+        return std::make_pair(std::move(det_descr), std::move(det_cond));
+      },
+      "detector_file"_a, "digitization_file"_a, "conditions_file"_a = "");
+  }
+
+  /// Read cells from file
+  {
+    traccc.def("readCells",
+      [](const std::string& directory,
+         std::size_t event,
+         const traccc::detector_conditions_description::host& det_cond) {
+        static vecmem::host_memory_resource mr;
+        traccc::edm::silicon_cell_collection::host cells{mr};
+        static constexpr bool DEDUPLICATE = true;
+        traccc::io::read_cells(
+            cells, event, directory,
+            traccc::getDefaultLogger("ReadCells", traccc::Logging::INFO),
+            &det_cond, traccc::data_format::csv,
+            DEDUPLICATE, false);
+        return cells;
+      },
+      "directory"_a, "event"_a, "det_cond"_a);
+  }
+
+  /// Full chain algorithm bindings
+  {
+    using FullChain = traccc::cuda::full_chain_algorithm;
+
+    // Input cell type
+    py::class_<traccc::edm::silicon_cell_collection::host>(traccc, "SiliconCellCollection")
+        .def(py::init([](){
+            static vecmem::host_memory_resource mr;
+            return traccc::edm::silicon_cell_collection::host{mr};
+        }))
+        .def("size", &traccc::edm::silicon_cell_collection::host::size);
+
+    // Output track type
+    py::class_<traccc::edm::track_collection<traccc::default_algebra>::host>(
+        traccc, "TrackCollection")
+        .def("size",
+             [](const traccc::edm::track_collection<traccc::default_algebra>::host& t) {
+               return t.size();
+             });
+
+    // The full chain algorithm
+    py::class_<FullChain>(traccc, "FullChainAlgorithm")
+        .def(py::init([](
+            const traccc::detector_design_description::host& det_descr,
+            const traccc::detector_conditions_description::host& det_cond,
+            const traccc::magnetic_field& field
+        ) {
+            static vecmem::host_memory_resource mr;
+            traccc::seedfinder_config finder_cfg;
+            return std::make_unique<FullChain>(
+                mr,
+                traccc::clustering_config{},
+                finder_cfg,
+                traccc::spacepoint_grid_config{finder_cfg},
+                traccc::seedfilter_config{},
+                traccc::track_params_estimation_config{},
+                FullChain::finding_algorithm::config_type{},
+                FullChain::fitting_algorithm::config_type{},
+                det_descr, det_cond, field, nullptr,
+                traccc::getDefaultLogger("FullChain", traccc::Logging::INFO)
+            );
+        }),
+        "det_descr"_a, "det_cond"_a, "field"_a)
+        .def("__call__",
+             [](const FullChain& alg,
+                const traccc::edm::silicon_cell_collection::host& cells) {
+               return alg(cells);
+             },
+             "cells"_a);
+  }
 }
