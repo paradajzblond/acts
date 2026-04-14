@@ -172,6 +172,11 @@ add_examples_binding_if(TGeo Acts::ExamplesDetectorTGeo ACTS_BUILD_EXAMPLES_ROOT
 add_examples_binding_if(Detray "Acts::PluginCovfie;Acts::ExamplesDetray" ACTS_BUILD_PLUGIN_DETRAY FALSE)
 add_examples_binding_if(TruthJet Acts::ExamplesJets ACTS_BUILD_EXAMPLES_FASTJET FALSE)
 
+add_examples_binding_if(Traccc
+  "Acts::PluginCovfie;Acts::ExamplesTraccc;traccc::device_common;traccc::cuda"
+  ACTS_BUILD_PLUGIN_TRACCC FALSE
+)
+
 # Special case for HepMC3 as it a hard dependency
 pybind11_add_module(ActsExamplesPythonBindingsHepMC3 src/plugins/HepMC3.cpp)
 install(
