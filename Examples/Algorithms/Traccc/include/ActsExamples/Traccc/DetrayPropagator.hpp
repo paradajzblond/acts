@@ -16,14 +16,14 @@
 #include "ActsExamples/Propagation/PropagatorInterface.hpp"
 #include "ActsExamples/Traccc/DetrayStore.hpp"
 
+#include <covfie/core/field.hpp>
 #include <detray/navigation/caching_navigator.hpp>
 #include <detray/propagator/actor_chain.hpp>
 #include <detray/propagator/propagation_config.hpp>
 #include <detray/propagator/propagator.hpp>
+#include <detray/test/common/bfield.hpp>
 #include <detray/test/utils/inspectors.hpp>
 #include <detray/test/validation/material_validation_utils.hpp>
-#include <detray/test/common/bfield.hpp>
-#include <covfie/core/field.hpp>
 
 namespace ActsExamples {
 
@@ -107,10 +107,9 @@ class DetrayPropagator : public PropagatorInterface {
 
       // Navigation with inspection
       using DetrayNavigator =
-        detray::caching_navigator<ActsPlugins::DetrayHostDetector,
-                          detray::navigation::default_cache_size,
-                          DetrayInspector,
-                          DetrayIntersection>;
+          detray::caching_navigator<ActsPlugins::DetrayHostDetector,
+                                    detray::navigation::default_cache_size,
+                                    DetrayInspector, DetrayIntersection>;
 
       // Propagator with empty actor chain (for the moment)
       using Propagator =
@@ -132,10 +131,9 @@ class DetrayPropagator : public PropagatorInterface {
       }
 
     } else {
-
       // Navigation with inspection
       using DetrayNavigator =
-        detray::caching_navigator<ActsPlugins::DetrayHostDetector>;
+          detray::caching_navigator<ActsPlugins::DetrayHostDetector>;
 
       // Propagator with empty actor chain (for the moment)
       using Propagator =
@@ -206,8 +204,9 @@ class DetrayPropagator : public PropagatorInterface {
       Acts::detail::Step step;
       step.position = Acts::Vector3(dposition[0], dposition[1], dposition[2]);
       step.geoID = geoID;
-      step.navDir = object.intersection.is_along() ? Acts::Direction::Forward()
-                                                  : Acts::Direction::Backward();
+      step.navDir = object.intersection.is_along()
+                        ? Acts::Direction::Forward()
+                        : Acts::Direction::Backward();
       summary.steps.emplace_back(step);
     }
 
