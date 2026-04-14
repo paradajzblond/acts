@@ -16,8 +16,6 @@ target_link_libraries(
         traccc::core
         traccc::io
         vecmem::cuda
-        traccc::examples_common
-        traccc::examples_cuda
 )
 
 acts_compile_headers(ExamplesTraccc GLOB "include/**/*.hpp")
