@@ -171,7 +171,7 @@ add_examples_binding_if(TGeo Acts::ExamplesDetectorTGeo ACTS_BUILD_EXAMPLES_ROOT
 add_examples_binding_if(TruthJet Acts::ExamplesJets ACTS_BUILD_EXAMPLES_FASTJET FALSE)
 
 add_examples_binding_if(Traccc
-  "Acts::PluginCovfie;Acts::ExamplesTraccc;traccc::device_common;traccc::cuda"
+  "Acts::PluginCovfie;Acts::ExamplesTraccc"
   ACTS_BUILD_PLUGIN_TRACCC FALSE
 )
 
