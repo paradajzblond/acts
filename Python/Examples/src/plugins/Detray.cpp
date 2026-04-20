@@ -32,7 +32,6 @@ using namespace ActsExamples;
 using namespace ActsPlugins;
 using namespace ActsPython;
 
-
 PYBIND11_MODULE(ActsExamplesPythonBindingsDetray, detray) {
   /// Define host detray store
   {
@@ -85,5 +84,4 @@ PYBIND11_MODULE(ActsExamplesPythonBindingsDetray, detray) {
         },
         "store"_a, "field"_a, "sterile"_a = false);
   }
-
 }
