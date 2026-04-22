@@ -12,15 +12,8 @@ set(ACTS_VECMEM_SOURCE
 )
 mark_as_advanced(ACTS_VECMEM_SOURCE)
 
-set(ACTS_ALGEBRAPLUGINS_SOURCE
-    "URL;https://github.com/acts-project/algebra-plugins/archive/refs/tags/v${_acts_algebraplugins_version}.tar.gz;URL_HASH;SHA256=fd3aa003d2091e8d4bd1ef1d9df78bed281a662d803f5ae747a3e16d263dc978"
-    CACHE STRING
-    "Source to take ALGEBRAPLUGINS from"
-)
-mark_as_advanced(ACTS_ALGEBRAPLUGINS_SOURCE)
-
 set(ACTS_COVFIE_SOURCE
-    "URL;https://github.com/acts-project/covfie/archive/refs/tags/v${_acts_covfie_version}.tar.gz;URL_HASH;SHA256=6eff65e05118d3007c689e3529a62bb1674348ac1b0f0f32afd953c62d1b8890"
+    "URL;https://github.com/acts-project/covfie/archive/refs/tags/v${_acts_covfie_version}.tar.gz;URL_HASH;SHA256=f13ba18b923d2f6da3dc8a20b76152f7ebf4420fbebb12684e7215d178780029"
     CACHE STRING
     "Source to take COVFIE from"
 )

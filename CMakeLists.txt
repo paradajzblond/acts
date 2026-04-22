@@ -62,8 +62,6 @@ option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 option(ACTS_USE_SYSTEM_LIBS "Use system libraries by default" OFF)
 # plugins related options
 option(ACTS_USE_SYSTEM_ACTSVG "Use the ActSVG system library" ${ACTS_USE_SYSTEM_LIBS})
-option(ACTS_USE_SYSTEM_ALGEBRAPLUGINS "Use a system-provided algebra-plugins installation" ${ACTS_USE_SYSTEM_LIBS})
-option(ACTS_SETUP_ALGEBRAPLUGINS "If we want to set up algebra-plugins" ON)
 option(ACTS_USE_SYSTEM_COVFIE "Use a system-provided covfie installation" ${ACTS_USE_SYSTEM_LIBS})
 option(ACTS_SETUP_COVFIE "If we want to set up covfie" ON)
 option(ACTS_USE_SYSTEM_DETRAY "Use a system-provided detray installation" ${ACTS_USE_SYSTEM_LIBS})
@@ -306,8 +304,7 @@ set(_acts_pybind11_version 3.0.1)
 set(_acts_detray_version 1.0.0)
 set(_acts_traccc_version 1.1.0)
 set(_acts_covfie_version 0.15.2)
-set(_acts_vecmem_version 1.23.0)
-set(_acts_algebraplugins_version 0.30.0)
+set(_acts_vecmem_version 1.24.0)
 set(_acts_annoy_version 1.17.3)
 set(_acts_fastjet_version 3.4.1)
 
@@ -556,18 +553,6 @@ if(ACTS_BUILD_PLUGIN_TRACCC)
             add_subdirectory(thirdparty/vecmem)
             # Make the "VecMem language code" available for the whole project.
             include("${VECMEM_LANGUAGE_DIR}/vecmem-check-language.cmake")
-        endif()
-    endif()
-
-    if(ACTS_SETUP_ALGEBRAPLUGINS)
-        if(ACTS_USE_SYSTEM_ALGEBRAPLUGINS)
-            find_package(
-                algebra-plugins
-                ${_acts_algebraplugins_version}
-                REQUIRED
-            )
-        else()
-            add_subdirectory(thirdparty/algebra-plugins)
         endif()
     endif()
 
