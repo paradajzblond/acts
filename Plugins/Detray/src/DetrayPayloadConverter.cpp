@@ -439,7 +439,8 @@ DetrayPayloadConverter::convertMaterial(
             << " surfaces (detray "
                "hack)");
   for (const auto& surface : volPayload.surfaces) {
-    auto& slabPayload = homogeneous.surface_mat.emplace_back(s_dummyMaterialSlab);
+    auto& slabPayload =
+        homogeneous.surface_mat.emplace_back(s_dummyMaterialSlab);
     slabPayload.index_in_coll = surface.index_in_coll.value();
     slabPayload.surface.link = surface.index_in_coll.value();
   }
@@ -753,9 +754,10 @@ DetrayPayloadConverter::convertTrackingGeometry(
     auto [grids, homogeneous] =
         convertMaterial(volume, surfaceIndices, volPayload);
 
-    ACTS_DEBUG("Volume " << volume.volumeName() << " (detray idx: "
-                         << volPayload.index.link << ") has "
-                         << homogeneous.surface_mat.size() << " material slabs");
+    ACTS_DEBUG("Volume " << volume.volumeName()
+                         << " (detray idx: " << volPayload.index.link
+                         << ") has " << homogeneous.surface_mat.size()
+                         << " material slabs");
 
     if (!homogeneous.surface_mat.empty()) {
       // Only add if it's not empty (it might be)

@@ -11,17 +11,17 @@
 #include "Acts/Geometry/GeometryIdentifier.hpp"
 #include "Acts/Utilities/Logger.hpp"
 #include "Acts/Utilities/Result.hpp"
+#include "ActsExamples/Detray/DetrayStore.hpp"
 #include "ActsExamples/EventData/PropagationSummary.hpp"
 #include "ActsExamples/Propagation/PropagationAlgorithm.hpp"
 #include "ActsExamples/Propagation/PropagatorInterface.hpp"
-#include "ActsExamples/Detray/DetrayStore.hpp"
 
-#include <detray/navigation/caching_navigator.hpp>
 #include <covfie/core/field.hpp>
-#include <detray/test/common/bfield.hpp>
+#include <detray/navigation/caching_navigator.hpp>
 #include <detray/propagator/actor_chain.hpp>
 #include <detray/propagator/propagation_config.hpp>
 #include <detray/propagator/propagator.hpp>
+#include <detray/test/common/bfield.hpp>
 #include <detray/test/utils/inspectors.hpp>
 #include <detray/test/validation/material_validation_utils.hpp>
 

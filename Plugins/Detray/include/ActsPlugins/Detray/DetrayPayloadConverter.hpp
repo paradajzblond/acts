@@ -73,10 +73,10 @@ namespace ActsPlugins {
 class DetrayPayloadConverter {
  public:
   /// Detray surface material payload type
-  using DetraySurfaceMaterial =
-      std::variant<detray::io::grid_payload<detray::io::surface_material_payload,
-                                            detray::io::material_id>,
-                   detray::io::surface_material_payload>;
+  using DetraySurfaceMaterial = std::variant<
+      detray::io::grid_payload<detray::io::surface_material_payload,
+                               detray::io::material_id>,
+      detray::io::surface_material_payload>;
 
   /// Detray surface grid payload type
   using DetraySurfaceGrid =

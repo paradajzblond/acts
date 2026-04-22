@@ -76,9 +76,10 @@ DetrayPayloadConverter::convertBinnedSurfaceMaterial(
       std::size_t lb1 = swapped ? ib0 : ib1;
       detray::io::surface_material_payload slab =
           DetrayConversionUtils::convertMaterialSlab(materialMatrix[ib1][ib0]);
-      detray::io::grid_bin_payload<detray::io::surface_material_payload> slabBin{
-          {static_cast<unsigned int>(lb0), static_cast<unsigned int>(lb1)},
-          {slab}};
+      detray::io::grid_bin_payload<detray::io::surface_material_payload>
+          slabBin{
+              {static_cast<unsigned int>(lb0), static_cast<unsigned int>(lb1)},
+              {slab}};
       // Fill into the grid
       materialGrid.bins.push_back(slabBin);
     }

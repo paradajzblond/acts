@@ -742,7 +742,7 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
   // Checks and print
   detray::detail::check_consistency(detrayDetector);
 
-   // Helper to convert std::map<unsigned int, std::string> to detray::name_map
+  // Helper to convert std::map<unsigned int, std::string> to detray::name_map
   auto toDetrayNameMap = [](const std::map<unsigned int, std::string>& src) {
     detray::name_map result;
     for (const auto& [idx, name] : src) {
@@ -751,9 +751,10 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
     return result;
   };
 
-  auto detrayNames = toDetrayNameMap(payloads.names);Expand commentComment on line R754Resolved
+  auto detrayNames = toDetrayNameMap(payloads.names);
+  Expand commentComment on line R754Resolved
 
-  detray::svgtools::illustrator illustrator(detrayDetector, detrayNames);
+      detray::svgtools::illustrator illustrator(detrayDetector, detrayNames);
   illustrator.hide_eta_lines(true);
   illustrator.show_info(true);
 

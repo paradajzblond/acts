@@ -6,9 +6,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ActsExamples/Propagation/PropagatorInterface.hpp"
 #include "ActsExamples/Detray/DetrayPropagator.hpp"
 #include "ActsExamples/Detray/DetrayStore.hpp"
+#include "ActsExamples/Propagation/PropagatorInterface.hpp"
 #include "ActsPlugins/Covfie/FieldConversion.hpp"
 #include "ActsPlugins/Detray/DetrayConversionUtils.hpp"
 #include "ActsPython/Utilities/Helpers.hpp"
