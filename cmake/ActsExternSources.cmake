@@ -6,14 +6,14 @@ set(ACTS_ACTSVG_SOURCE
 mark_as_advanced(ACTS_ACTSVG_SOURCE)
 
 set(ACTS_VECMEM_SOURCE
-    "URL;https://github.com/acts-project/vecmem/archive/refs/tags/v${_acts_vecmem_version}.tar.gz;URL_HASH;SHA256=eee612fe5276d5852ccbfad1feda4b4f00391791479e08934d70cd437f376df9"
+    "URL;https://github.com/acts-project/vecmem/archive/refs/tags/v${_acts_vecmem_version}.tar.gz;URL_HASH;SHA256=f13ba18b923d2f6da3dc8a20b76152f7ebf4420fbebb12684e7215d178780029"
     CACHE STRING
     "Source to take VECMEM from"
 )
 mark_as_advanced(ACTS_VECMEM_SOURCE)
 
 set(ACTS_COVFIE_SOURCE
-    "URL;https://github.com/acts-project/covfie/archive/refs/tags/v${_acts_covfie_version}.tar.gz;URL_HASH;SHA256=f13ba18b923d2f6da3dc8a20b76152f7ebf4420fbebb12684e7215d178780029"
+    "URL;https://github.com/acts-project/covfie/archive/refs/tags/v${_acts_covfie_version}.tar.gz;URL_HASH;SHA256=6eff65e05118d3007c689e3529a62bb1674348ac1b0f0f32afd953c62d1b8890"
     CACHE STRING
     "Source to take COVFIE from"
 )
@@ -27,7 +27,7 @@ set(ACTS_DETRAY_SOURCE
 mark_as_advanced(ACTS_DETRAY_SOURCE)
 
 set(ACTS_TRACCC_SOURCE
-    "URL;https://github.com/acts-project/traccc/archive/refs/tags/v${_acts_traccc_version}.tar.gz;URL_HASH;SHA256=819e36962a796a0cec110bb2df0fe389467467651b83b4524570a5bd9b35d5ac"
+    "URL;https://github.com/acts-project/traccc/archive/refs/tags/v${_acts_traccc_version}.tar.gz;URL_HASH;SHA256=de4c88028f51deb63d75c5bdcde40803832e372219cd59d195a748560dacdeb1"
     CACHE STRING
     "Source to take TRACCC from"
 )

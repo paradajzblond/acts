@@ -98,5 +98,10 @@ set(DETRAY_SETUP_NLOHMANN
     "Do not set up nlohmann as part of Detray"
 )
 
+set(DETRAY_GENERATE_METADATA "itk_metadata"
+    CACHE STRING
+    "Turn on the build of the ITk metadata for Traccc"
+)
+
 #Now set up its build.
 FetchContent_MakeAvailable(Detray)
