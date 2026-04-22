@@ -14,7 +14,7 @@
 #include "ActsExamples/EventData/PropagationSummary.hpp"
 #include "ActsExamples/Propagation/PropagationAlgorithm.hpp"
 #include "ActsExamples/Propagation/PropagatorInterface.hpp"
-#include "ActsExamples/Traccc/DetrayStore.hpp"
+#include "ActsExamples/Detray/DetrayStore.hpp"
 
 #include <detray/navigation/caching_navigator.hpp>
 #include <covfie/core/field.hpp>

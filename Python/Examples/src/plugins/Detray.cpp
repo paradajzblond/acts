@@ -7,8 +7,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ActsExamples/Propagation/PropagatorInterface.hpp"
-#include "ActsExamples/Traccc/DetrayPropagator.hpp"
-#include "ActsExamples/Traccc/DetrayStore.hpp"
+#include "ActsExamples/Detray/DetrayPropagator.hpp"
+#include "ActsExamples/Detray/DetrayStore.hpp"
 #include "ActsPlugins/Covfie/FieldConversion.hpp"
 #include "ActsPlugins/Detray/DetrayConversionUtils.hpp"
 #include "ActsPython/Utilities/Helpers.hpp"
