@@ -752,9 +752,8 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
   };
 
   auto detrayNames = toDetrayNameMap(payloads.names);
-  Expand commentComment on line R754Resolved
 
-      detray::svgtools::illustrator illustrator(detrayDetector, detrayNames);
+  detray::svgtools::illustrator illustrator(detrayDetector, detrayNames);
   illustrator.hide_eta_lines(true);
   illustrator.show_info(true);
 
