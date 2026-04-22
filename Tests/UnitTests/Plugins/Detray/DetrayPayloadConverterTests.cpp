@@ -637,7 +637,7 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
     auto& hMat = *it;
 
     // Currently, we expect exactly one slab per surface!
-    BOOST_CHECK_EQUAL(volume.surfaces.size(), hMat.mat_slabs.size());
+    BOOST_CHECK_EQUAL(volume.surfaces.size(), hMat.surface_mat.size());
   }
 
   BOOST_CHECK_EQUAL(materialGrids.grids.size(), 2);
@@ -701,10 +701,10 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
     header_data.sub_header->n_slabs = 0;
 
     for (const auto& hVol : homogeneousMaterial.volumes) {
-      if (hVol.mat_rods.has_value()) {
-        header_data.sub_header->n_rods += hVol.mat_rods->size();
+      if (!hVol.surface_mat.empty()) {
+        header_data.sub_header->n_rods += hVol.surface_mat.size();
       }
-      header_data.sub_header->n_slabs += hVol.mat_slabs.size();
+      header_data.sub_header->n_slabs += hVol.surface_mat.size();
     }
 
     nlohmann::ordered_json out_json;
