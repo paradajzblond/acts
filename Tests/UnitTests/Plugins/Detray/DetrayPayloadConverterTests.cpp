@@ -742,7 +742,18 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
   // Checks and print
   detray::detail::check_consistency(detrayDetector);
 
-  detray::svgtools::illustrator illustrator(detrayDetector, payloads.names);
+   // Helper to convert std::map<unsigned int, std::string> to detray::name_map
+  auto toDetrayNameMap = [](const std::map<unsigned int, std::string>& src) {
+    detray::name_map result;
+    for (const auto& [idx, name] : src) {
+      result.emplace(static_cast<detray::dindex>(idx), name);
+    }
+    return result;
+  };
+
+  auto detrayNames = toDetrayNameMap(payloads.names);Expand commentComment on line R754Resolved
+
+  detray::svgtools::illustrator illustrator(detrayDetector, detrayNames);
   illustrator.hide_eta_lines(true);
   illustrator.show_info(true);
 
@@ -750,10 +761,9 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
   actsvg::style::stroke stroke_black = actsvg::style::stroke();
   auto zr_axis = actsvg::draw::x_y_axes("axes", {-250, 250}, {-250, 250},
                                         stroke_black, "z", "r");
-  detray::svgtools::write_svg("test_svgtools_detector_zr", {
-                                                               zr_axis,
-                                                               svg_zr,
-                                                           });
+  detray::svgtools::write_svg(
+      "test_svgtools_detector_zr",
+      std::initializer_list<actsvg::svg::object>{zr_axis, svg_zr});
 
   const auto svg_xy = illustrator.draw_detector(actsvg::views::x_y{});
   auto xy_axis = actsvg::draw::x_y_axes("axes", {-250, 250}, {-250, 250},
@@ -770,7 +780,7 @@ BOOST_AUTO_TEST_CASE(DetrayTrackingGeometryConversionTests) {
   // std::cout << detray::utils::print_detector(detrayDetector, payloads.names)
   //           << std::endl;
 
-  detray::io::write_detector(detrayDetector, payloads.names, writer_cfg);
+  detray::io::write_detector(detrayDetector, detrayNames, writer_cfg);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
