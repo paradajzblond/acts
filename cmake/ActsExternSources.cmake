@@ -6,14 +6,14 @@ set(ACTS_ACTSVG_SOURCE
 mark_as_advanced(ACTS_ACTSVG_SOURCE)
 
 set(ACTS_VECMEM_SOURCE
-    "URL;https://github.com/acts-project/vecmem/archive/refs/tags/v${_acts_vecmem_version}.tar.gz;URL_HASH;SHA256=a6e30da7dcb9a792eb0f2c0ceb821f52cf867c9745a65468b2ce6f026b23a49d"
+    "URL;https://github.com/acts-project/vecmem/archive/refs/tags/v${_acts_vecmem_version}.tar.gz;URL_HASH;SHA256=eee612fe5276d5852ccbfad1feda4b4f00391791479e08934d70cd437f376df9"
     CACHE STRING
     "Source to take VECMEM from"
 )
 mark_as_advanced(ACTS_VECMEM_SOURCE)
 
 set(ACTS_ALGEBRAPLUGINS_SOURCE
-    "URL;https://github.com/acts-project/algebra-plugins/archive/refs/tags/v${_acts_algebraplugins_version}.tar.gz;URL_HASH;SHA256=d798ba2129bf922f54627233ef947b8bb2345db9199e3868cc48bc1da86d5f15"
+    "URL;https://github.com/acts-project/algebra-plugins/archive/refs/tags/v${_acts_algebraplugins_version}.tar.gz;URL_HASH;SHA256=fd3aa003d2091e8d4bd1ef1d9df78bed281a662d803f5ae747a3e16d263dc978"
     CACHE STRING
     "Source to take ALGEBRAPLUGINS from"
 )
@@ -27,14 +27,14 @@ set(ACTS_COVFIE_SOURCE
 mark_as_advanced(ACTS_COVFIE_SOURCE)
 
 set(ACTS_DETRAY_SOURCE
-    "URL;https://github.com/acts-project/detray/archive/refs/tags/v${_acts_detray_version}.tar.gz;URL_HASH;SHA256=7b3d3c94cf42be7450e9fe008b567a2f425e6f1986b61d8a3a66814383599043"
+    "URL;https://github.com/acts-project/detray/archive/refs/tags/v${_acts_detray_version}.tar.gz;URL_HASH;SHA256=9782791ac9101ec3e4b4e7587e728baa5708a1149f4ae775796173da2666f19b"
     CACHE STRING
     "Source to take DETRAY from"
 )
 mark_as_advanced(ACTS_DETRAY_SOURCE)
 
 set(ACTS_TRACCC_SOURCE
-    "URL;https://github.com/acts-project/traccc/archive/refs/tags/v${_acts_traccc_version}.tar.gz;URL_HASH;SHA256=d2dd856a83503ab452936f79ebb2496ce59e2f63984b0e9403d1c881546b8872"
+    "URL;https://github.com/acts-project/traccc/archive/refs/tags/v${_acts_traccc_version}.tar.gz;URL_HASH;SHA256=819e36962a796a0cec110bb2df0fe389467467651b83b4524570a5bd9b35d5ac"
     CACHE STRING
     "Source to take TRACCC from"
 )
