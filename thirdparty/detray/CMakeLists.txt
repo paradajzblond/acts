@@ -29,7 +29,7 @@ set(DETRAY_CUSTOM_SCALARTYPE
 )
 
 set(DETRAY_BUILD_TEST_UTILS
-    ON
+    OFF
     CACHE BOOL
     "Turn on the build of the Detray test utilities"
 )
