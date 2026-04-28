@@ -10,7 +10,11 @@ acts_add_library(
 
 acts_compile_headers(PluginGnn GLOB include/**/*.hpp)
 
+<<<<<<< HEAD
 if(ACTS_ENABLE_CUDA AND ACTS_ENABLE_GNN)
+=======
+if(ACTS_ENABLE_CUDA)
+>>>>>>> b3cd6c42e (add traccc example alg)
     target_compile_definitions(ActsPluginGnn PUBLIC ACTS_GNN_WITH_CUDA)
     target_sources(
         ActsPluginGnn
@@ -63,7 +67,7 @@ target_include_directories(
 
 target_link_libraries(ActsPluginGnn PUBLIC Acts::Core Boost::boost)
 
-if(ACTS_ENABLE_CUDA AND ACTS_ENABLE_GNN)
+if(ACTS_ENABLE_CUDA)
     target_compile_features(ActsPluginGnn PUBLIC cuda_std_20)
     set_target_properties(
         ActsPluginGnn
