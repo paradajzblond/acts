@@ -172,11 +172,6 @@ add_examples_binding_if(TGeo Acts::ExamplesDetectorTGeo ACTS_BUILD_EXAMPLES_ROOT
 add_examples_binding_if(Detray "Acts::PluginCovfie;Acts::ExamplesDetray" ACTS_BUILD_PLUGIN_DETRAY FALSE)
 add_examples_binding_if(TruthJet Acts::ExamplesJets ACTS_BUILD_EXAMPLES_FASTJET FALSE)
 
-add_examples_binding_if(Detray
-  "Acts::PluginCovfie;Acts::ExamplesDetray"
-  ACTS_BUILD_PLUGIN_DETRAY FALSE
-)
-
 set(_traccc_cuda_enabled FALSE)
 if(ACTS_BUILD_PLUGIN_TRACCC AND ACTS_ENABLE_CUDA)
     set(_traccc_cuda_enabled TRUE)
