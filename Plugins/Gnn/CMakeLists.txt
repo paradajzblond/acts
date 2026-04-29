@@ -10,7 +10,6 @@ acts_add_library(
 
 acts_compile_headers(PluginGnn GLOB include/**/*.hpp)
 
-
 if(ACTS_ENABLE_CUDA)
     target_compile_definitions(ActsPluginGnn PUBLIC ACTS_GNN_WITH_CUDA)
     target_sources(
