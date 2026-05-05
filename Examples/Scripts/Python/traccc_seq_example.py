@@ -1,27 +1,14 @@
 #!/usr/bin/env python3
 
-# This file is part of the ACTS project.
-#
-# Copyright (C) 2016 CERN for the benefit of the ACTS project
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
-"""
-This script shows an example of how to run Traccc as a sequential algorithm within the ACTS Examples framework, using per-event cell CSV files and JSON detector files as input. It mirrors the standalone Traccc CUDA seq example.
-Expects the same directory layout as the standalone executable:
-- all the detector, digitization, mag. field etc. files are read from JSON or binary files specified on the command line
-- the per-event CSV files are in the same directory, with sequential number names like event000000000-cells.csv, event000000001-cells.csv, etc.
-"""
-
 from pathlib import Path
 import argparse
+import pathlib
 import sys
 
 import acts
 import acts.examples
 from acts.examples.traccc import *
+from acts.examples.odd import getOpenDataDetector, getOpenDataDetectorDirectory
 
 u = acts.UnitConstants
 
@@ -35,136 +22,52 @@ def make_sequencer(
     conditionsFile: Path,
     materialFile: Path = Path(),
     gridFile: Path = Path(),
+    logLevel=acts.logging.INFO,
 ):
-    """
-    Configure the sequencer with the traccc GPU sequence algorithm.
-
-    Parameters
-    ----------
-    s:
-        The sequencer to configure.
-    detectorFile:
-        Path to the detray detector JSON file.
-    digitizationFile:
-        Path to the digitization config JSON file.
-    bfieldFile:
-        Path to the covfie magnetic field binary file.
-    dataDirectory:
-        Directory containing per-event cell CSV files.
-    conditionsFile:
-        Path to the detector conditions JSON file.
-    materialFile:
-        Path to the material map file (optional).
-    gridFile:
-        Path to the surface grid file (optional).
-    """
+    # ── Traccc chain ──────────────────────────────────────────────────────────
+    cfg = acts.examples.traccc.TracccSeqAlgorithm.Config()
+    cfg.detectorFile      = str(detectorFile)
+    cfg.digitizationFile  = str(digitizationFile)
+    cfg.bfieldFile        = str(bfieldFile)
+    cfg.dataDirectory     = str(dataDirectory)
+    cfg.conditionsFile    = str(conditionsFile)
+    cfg.materialFile      = str(materialFile)
+    cfg.gridFile          = str(gridFile)
+    cfg.outputMeasurements    = "traccc-measurements"
+    cfg.outputTracks          = "traccc-tracks"
+    cfg.outputDetrayToActsMap = "detray-to-acts-map"
 
     s.addAlgorithm(
-        TracccSeqAlgorithm(
-            level=acts.logging.INFO,
-            detectorFile=str(detectorFile),
-            digitizationFile=str(digitizationFile),
-            bfieldFile=str(bfieldFile),
-            dataDirectory=str(dataDirectory),
-            conditionsFile=str(conditionsFile) if conditionsFile != Path() else "",
-            materialFile=str(materialFile) if materialFile != Path() else "",
-            gridFile=str(gridFile) if gridFile != Path() else "",
-        )
+        acts.examples.traccc.TracccSeqAlgorithm(cfg, logLevel)
     )
-
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Run the traccc GPU full-chain sequence over csv cell input files."
-    )
-    parser.add_argument(
-        "--events",
-        "-n",
-        type=int,
-        default=10,
-        help="Number of events to process",
-    )
-    parser.add_argument(
-        "--skip",
-        type=int,
-        default=0,
-        help="Number of events to skip at the start",
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path.cwd() / "traccc_output",
-        help="Directory for sequencer output",
-    )
-    parser.add_argument(
-        "--data-dir",
-        type=Path,
-        required=True,
-        help="Directory containing per-event cell CSV files (e.g. event000000000-cells.csv)",
-    )
-    parser.add_argument(
-        "--detector-file",
-        type=Path,
-        required=True,
-        help="Path to detray detector JSON file",
-    )
-    parser.add_argument(
-        "--digitization-file",
-        type=Path,
-        required=True,
-        help="Path to digitization config JSON file",
-    )
-    parser.add_argument(
-        "--bfield-file",
-        type=Path,
-        required=True,
-        help="Path to covfie magnetic field file",
-    )
-    parser.add_argument(
-        "--conditions-file",
-        type=Path,
-        default=None,
-        help="Path to detector conditions file (optional)",
-    )
-    parser.add_argument(
-        "--material-file",
-        type=Path,
-        default=None,
-        help="Path to material map file (optional)",
-    )
-    parser.add_argument(
-        "--grid-file",
-        type=Path,
-        default=None,
-        help="Path to surface grid file (optional)",
-    )
-    parser.add_argument(
-        "--log-level",
-        choices=["VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "FATAL"],
-        default="INFO",
-        help="Logging level",
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--events", "-n", type=int, default=10)
+    parser.add_argument("--skip", type=int, default=0)
+    parser.add_argument("--output-dir", type=Path,
+                        default=Path.cwd() / "traccc_output")
+    parser.add_argument("--data-dir", type=Path, required=True)
+    parser.add_argument("--detector-file", type=Path, required=True)
+    parser.add_argument("--digitization-file", type=Path, required=True)
+    parser.add_argument("--bfield-file", type=Path, required=True)
+    parser.add_argument("--conditions-file", type=Path, default=None)
+    parser.add_argument("--material-file", type=Path, default=None)
+    parser.add_argument("--grid-file", type=Path, default=None)
+    parser.add_argument("--odd-material-map", type=Path, default=None,
+                        help="ODD material map for Acts geometry (optional)")
+    parser.add_argument("--log-level",
+                        choices=["VERBOSE","DEBUG","INFO","WARNING","ERROR","FATAL"],
+                        default="INFO")
     args = parser.parse_args()
 
-    # Validate required inputs exist
-    for label, path in [
-        ("detector file", args.detector_file),
-        ("digitization file", args.digitization_file),
-        ("magnetic field file", args.bfield_file),
-        ("conditions file", args.conditions_file),
-        ("data directory", args.data_dir),
-    ]:
-        if not path.exists():
-            print(f"ERROR: {label} does not exist: {path}", file=sys.stderr)
-            sys.exit(1)
-
     args.output_dir.mkdir(parents=True, exist_ok=True)
-
     logLevel = getattr(acts.logging, args.log_level)
 
     s = acts.examples.Sequencer(
         events=args.events,
         skip=args.skip,
+        numThreads=1,
         logLevel=logLevel,
         outputDir=str(args.output_dir),
         trackFpes=False,
@@ -179,6 +82,7 @@ def main():
         conditionsFile=args.conditions_file or Path(),
         materialFile=args.material_file or Path(),
         gridFile=args.grid_file or Path(),
+        logLevel=logLevel,
     )
 
     s.run()

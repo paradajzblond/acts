@@ -23,13 +23,17 @@
 #include <detray/definitions/grid_axis.hpp>
 #include <detray/detectors/default_metadata.hpp>
 #include <detray/io/frontend/payloads.hpp>
+#include <detray/detectors/odd_metadata.hpp>
 
 namespace ActsPlugins {
 
 /// Detray metadata type
-using DetrayMetaData = detray::default_metadata<detray::array<double>>;
+// using DetrayMetaData = detray::default_metadata<detray::array<double>>;
 
-/// Detray host detector type
+// /// Detray host detector type
+// using DetrayHostDetector = detray::detector<DetrayMetaData>;
+
+using DetrayMetaData = detray::odd_metadata<detray::array<double>>;
 using DetrayHostDetector = detray::detector<DetrayMetaData>;
 
 /// @ingroup detray_plugin

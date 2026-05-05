@@ -1,20 +1,30 @@
-acts_add_library(ExamplesTraccc src/TracccChain.cpp src/TracccSeqAlg.cpp)
+acts_add_library(ExamplesTraccc
+  src/TracccChain.cpp
+  src/TracccSeqAlg.cpp
+  src/TracccMeasToActsAlg.cpp
+  src/TracccTrackToActsAlg.cpp
+  src/ActsToDetrayDetectorAlg.cpp
+  src/ActsMeasToTracccAlg.cpp
+  src/ActsSpToTracccAlg.cpp
+)
 
 target_include_directories(
-    ActsExamplesTraccc
-    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  ActsExamplesTraccc
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 target_link_libraries(
-    ActsExamplesTraccc
-    PUBLIC
-        Acts::ExamplesFramework
-        Acts::ExamplesPropagation
-        Acts::PluginCovfie
-        Acts::PluginDetray
-        traccc::io
-        traccc::core
-        traccc::cuda
-        traccc::device_common
-        vecmem::cuda
+  ActsExamplesTraccc
+  PUBLIC
+    ActsCore
+    ActsPluginTraccc
+    ActsPluginDetray
+    ActsExamplesFramework
+  PRIVATE
+    traccc::io
+    traccc::core
+    traccc::cuda
+    traccc::device_common
+    vecmem::cuda
 )

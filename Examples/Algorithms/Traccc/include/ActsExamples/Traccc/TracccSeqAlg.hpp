@@ -11,6 +11,13 @@
 #include "Acts/Utilities/Logger.hpp"
 #include "ActsExamples/Framework/IAlgorithm.hpp"
 #include "ActsExamples/Framework/ProcessCode.hpp"
+#include "ActsExamples/Framework/DataHandle.hpp"
+#include "Acts/Geometry/GeometryIdentifier.hpp"
+
+#include <traccc/edm/measurement_collection.hpp>
+#include <traccc/edm/spacepoint_collection.hpp>
+#include "traccc/geometry/host_detector.hpp"
+#include <traccc/edm/track_container.hpp>
 
 #include <memory>
 #include <string>
@@ -41,12 +48,22 @@ class TracccSeqAlgorithm final : public IAlgorithm {
     std::string bfieldFile;
     /// Directory containing per-event cell CSV files
     std::string dataDirectory;
+    // Whiteboard output keys
+    std::string outputMeasurements = "traccc-measurements";
+    std::string outputTracks       = "traccc-tracks";
+    std::string outputDetrayToActsMap = "detray-to-acts-map";
+    std::string inputMeasurements = "";  // if empty, read from dataDirectory
+    std::string inputSpacepoints = "";         // if empty, read from dataDirectory
+
   };
+
+  std::unordered_map<std::uint64_t, Acts::GeometryIdentifier> detrayToActsMap;
 
   explicit TracccSeqAlgorithm(
       const Config& cfg, std::unique_ptr<const Acts::Logger> logger = nullptr);
 
   ProcessCode execute(const AlgorithmContext& ctx) const override;
+  ProcessCode initialize() override;
   ProcessCode finalize() override;
 
   const Config& config() const { return m_cfg; }
@@ -54,6 +71,20 @@ class TracccSeqAlgorithm final : public IAlgorithm {
  private:
   Config m_cfg;
   std::shared_ptr<TracccChain> m_chain;
+
+  ReadDataHandle<traccc::edm::measurement_collection::host>
+    m_inputMeasurements{this, "inputMeasurements"};
+  ReadDataHandle<traccc::edm::spacepoint_collection::host>
+      m_inputSpacepoints{this, "inputSpacepoints"};
+
+  WriteDataHandle<traccc::edm::measurement_collection::host>
+    m_outputMeasurements{this, "OutputMeasurements"};
+
+  WriteDataHandle<traccc::edm::track_container<traccc::default_algebra>::buffer>
+    m_outputTracks{this, "OutputTracks"};
+
+  WriteDataHandle<std::unordered_map<std::uint64_t, Acts::GeometryIdentifier>>
+    m_outputDetrayToActsMap{this, "OutputDetrayToActsMap"};
 };
 
 }  // namespace ActsExamples

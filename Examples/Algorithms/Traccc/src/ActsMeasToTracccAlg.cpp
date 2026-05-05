@@ -1,0 +1,262 @@
+#include "ActsExamples/Traccc/ActsMeasToTracccAlg.hpp"
+#include "ActsExamples/Framework/AlgorithmContext.hpp"
+#include <Acts/EventData/SourceLink.hpp>
+#include <detray/geometry/identifier.hpp>
+#include <stdexcept>
+
+namespace ActsExamples {
+
+ActsMeasToTracccAlg::ActsMeasToTracccAlg(
+    const Config& cfg, std::unique_ptr<const Acts::Logger> logger)
+    : IAlgorithm("ActsMeasToTracccAlg", std::move(logger)), m_cfg(cfg) {
+
+    if (!m_cfg.trackingGeometry) {
+        throw std::invalid_argument(
+            "TracccMeasToActsAlg: trackingGeometry is null");
+    }
+    m_inputActsMeasurements.initialize(m_cfg.inputActsMeasurements);
+    //   m_inputDetrayToActsMap.initialize(m_cfg.inputDetrayToActsMap);
+    m_outputDetrayToActsMap.initialize(m_cfg.outputDetrayToActsMap);
+    m_outputTracccMeasurements.initialize(m_cfg.outputTracccMeasurements);
+    // m_outputTracccSpacepoints.initialize(m_cfg.outputTracccSpacepoints);
+    m_outputActsToTracccIndexMap.initialize(m_cfg.outputActsToTracccIndexMap);
+
+
+    if(m_detrayToActsMap.empty()){
+        std::cout << "ActsMeasToTracccAlg: detrayToActsMap is empty" << std::endl;
+        buildSurfaceMap(*m_cfg.trackingGeometry, m_cfg.detectorFile, m_detrayToActsMap, m_actsToDetrayMap);
+        std::cout << "ActsMeasToTracccAlg: built surface map with " << m_detrayToActsMap.size() << " entries" << std::endl;
+        // for (const auto& [detrayId, actsId] : m_detrayToActsMap) {
+        //     auto it = m_actsToDetrayMap.find(actsId);
+        //     if (it != m_actsToDetrayMap.end()) {
+        //         std::cerr << "detray=" << detrayId
+        //                     << " actsId=" << actsId
+        //                     << "\n";
+        //     } else {
+        //         std::cerr << "detray=" << detrayId
+        //                     << " actsId=" << actsId
+        //                     << " no surface found\n";
+        //     }
+        // }
+    }
+
+}
+
+void ActsExamples::ActsMeasToTracccAlg::buildSurfaceMap(
+    const Acts::TrackingGeometry& trackingGeometry,
+    const std::string& detectorFile,
+    std::unordered_map<std::uint64_t, Acts::GeometryIdentifier>& m_detrayToActsMap,
+    std::unordered_map<Acts::GeometryIdentifier, std::uint64_t>& m_actsToDetrayMap){
+
+    std::unordered_map<Acts::GeometryIdentifier, std::array<double,3>> actsCentres;
+    std::unordered_map<std::uint64_t, std::array<double, 3>> detrayCentres;
+
+    //   Load detray detector and build Acts→detray map
+    traccc::io::read_detector(host_det, mr,
+                             detectorFile,
+                             "",
+                             "");
+
+    int nPrint = 0;
+    typename traccc::default_detector::host::geometry_context detrayContext{};
+    traccc::host_detector_visitor<traccc::detector_type_list>(
+        host_det,
+        [&]<typename detector_traits_t>(
+            const typename detector_traits_t::host& det) {
+        for (const auto& surface : det.surfaces()) {
+            if(!surface.is_sensitive()) continue;
+            const auto sf = detray::geometry::surface{det, surface};
+
+            double placement_x = sf.center(detrayContext)[0];
+            double placement_y = sf.center(detrayContext)[1];
+            double placement_z = sf.center(detrayContext)[2];
+            if(nPrint < 10){
+                std::cout << "detray=" << surface.identifier().value() << " pos: " << placement_x << ", " << placement_y << ", " << placement_z << std::endl;
+                nPrint++;
+            }
+            detrayCentres[surface.identifier().value()] = std::array{placement_x, placement_y, placement_z};
+
+        }
+    });
+
+    std::cout << "ActsMeasToTracccAlg: built detray map with "
+            << detrayCentres.size() << " entries" << std::endl;
+
+
+    nPrint = 0;
+    Acts::GeometryContext gctx = Acts::GeometryContext::dangerouslyDefaultConstruct();
+    trackingGeometry.visitSurfaces([&](const Acts::Surface* surface) {
+        if (surface != nullptr) {
+            Acts::Vector3 geo_center = surface->center(gctx);
+            if(nPrint < 10){
+                std::cout << "acts=" << surface->geometryId() << " pos: " << geo_center[0] << ", " << geo_center[1] << ", " << geo_center[2] << std::endl;
+                nPrint++;
+            }
+            actsCentres[surface->geometryId()] = std::array{geo_center[0], geo_center[1], geo_center[2]};
+        }
+    });
+
+    std::cout << "ActsMeasToTracccAlg: built acts map with "
+            << actsCentres.size() << " entries" << std::endl;
+
+    for(const auto& [detrayID, detrayCenter]: detrayCentres){
+        for(auto& [actsID, actsCenter]: actsCentres){
+            double distance = std::sqrt(std::pow(detrayCenter[0] - actsCenter[0], 2) +
+                                        std::pow(detrayCenter[1] - actsCenter[1], 2) +
+                                        std::pow(detrayCenter[2] - actsCenter[2], 2));
+            if(distance < 0.1){ // threshold for matching, may need tuning
+                m_detrayToActsMap[detrayID] = actsID;
+                m_actsToDetrayMap[actsID] = detrayID;
+                std::cout << "Matched detray ID " << detrayID << " to Acts ID " << actsID
+                          << " with distance " << distance << std::endl;
+                break;
+            }
+
+        }
+    }
+
+    std::cout << "ActsMeasToTracccAlg: built detray to Acts map with "
+            << m_detrayToActsMap.size() << " entries" << std::endl;
+
+}
+
+ProcessCode ActsMeasToTracccAlg::execute(const AlgorithmContext& ctx) const {
+
+    const auto& actsMeasurements  = m_inputActsMeasurements(ctx);
+    //   const auto& detrayToActsMap   = m_inputDetrayToActsMap(ctx);
+    const auto& detrayToActsMap   = m_detrayToActsMap;
+    // Build inverse map: Acts GeometryIdentifier → detray identifier
+    m_outputDetrayToActsMap(ctx, std::unordered_map<std::uint64_t, Acts::GeometryIdentifier>(m_detrayToActsMap));
+    std::unordered_map<std::uint64_t, std::uint64_t> actsToDetrayMap;
+    for (const auto& [detrayId, actsId] : detrayToActsMap) {
+        actsToDetrayMap[actsId.value()] = detrayId;
+    }
+
+    traccc::edm::measurement_collection::host tracccMeasurements{m_mr};
+    // traccc::edm::spacepoint_collection::host tracccSpacepoints{m_mr};
+    // acts index to traccc index
+    std::unordered_map<std::size_t, std::size_t> actsToTracccIndexMap;
+
+    for (std::size_t i = 0; i < actsMeasurements.size(); ++i) {
+        const auto meas = actsMeasurements.getMeasurement(i);
+        const auto geoId = meas.geometryId();
+        const auto dims = meas.size();
+        std::uint8_t sub0 = meas.subspaceIndexVector()[0];
+        std::uint8_t sub1 = (dims == 2u) ? meas.subspaceIndexVector()[1] : 255;
+        std::cerr << "ACTS meas " << i
+                << " geoId=" << geoId
+                << " dims=" << dims
+                << " loc0=" << meas.parameters()[0]
+                << " loc1=" << (dims >= 2 ? meas.parameters()[1] : 0.f)
+                << " sub0=" << static_cast<int>(sub0)
+                << " sub1=" << static_cast<int>(sub1)
+                << " var0=" << meas.covariance()(0,0)
+                << " var1=" << (dims >= 2 ? meas.covariance()(1,1) : 0.f)
+                << "\n";
+    }
+
+    std::size_t nConverted = 0;
+    std::size_t nPix = 0, nStripShort = 0, nStripLong = 0;
+    for (std::size_t i = 0; i < actsMeasurements.size(); ++i) {
+    const auto meas   = actsMeasurements.getMeasurement(i);
+    const auto geoId  = meas.geometryId();
+    const auto dims   = static_cast<unsigned int>(meas.size());
+
+    if (dims == 0u) continue;
+
+    auto it = actsToDetrayMap.find(geoId.value());
+    if (it == actsToDetrayMap.end()) {
+        ACTS_WARNING("ActsMeasToTracccAlg: no detray id for Acts geo id "
+                    << geoId);
+        continue;
+    }
+
+    tracccMeasurements.push_back({});
+    auto tm = tracccMeasurements.at(tracccMeasurements.size() - 1);
+
+    const auto* surface = m_cfg.trackingGeometry->findSurface(geoId);
+    bool isAnnulus = (surface &&
+        surface->bounds().type() == Acts::SurfaceBounds::eAnnulus);
+
+    if (dims >= 2u) {
+        // Pixel (dims=2 or 3 with timing)
+        tm.dimensions() = 2u;
+        tm.local_position()[0] = meas.parameters()[Acts::eBoundLoc0];
+        tm.local_position()[1] = meas.parameters()[Acts::eBoundLoc1];
+        tm.local_variance()[0] = meas.covariance()(0, 0);
+        tm.local_variance()[1] = meas.covariance()(1, 1);
+        tm.subspace()[0] = 0u;
+        tm.subspace()[1] = 1u;
+        nPix++;
+
+    } else {
+        // // 1D measurement - determine if long strip (1D in traccc) or short strip (2D in traccc)
+        // const auto vol = geoId.volume();
+        // const bool isShortStrip = (vol >= 48 && vol <= 51) ||  // barrel
+        //                     (vol >= 21 && vol <= 27) ||  // neg endcap
+        //                     (vol >= 36 && vol <= 42);    // pos endcap
+
+        // if (isShortStrip) {
+        //     // Short strip barrel: 2D in traccc with large cross-strip variance
+        //     tm.dimensions() = 2u;
+        //     tm.local_position()[0] = meas.parameters()[Acts::eBoundLoc0];
+        //     tm.local_position()[1] = 0.f;
+        //     tm.local_variance()[0] = meas.covariance()(0, 0);
+        //     tm.local_variance()[1] = 1.44f;
+        //     tm.subspace()[0] = 0u;
+        //     tm.subspace()[1] = 1u;
+        //     nStripShort++;
+
+        // } else {
+        //     // Everything else (long strips barrel/endcap, short strip endcap): 1D
+        //     tm.dimensions() = 1u;
+        //     tm.local_position()[0] = meas.parameters()[Acts::eBoundLoc0];
+        //     tm.local_position()[1] = 0.f;
+        //     tm.local_variance()[0] = meas.covariance()(0, 0);
+        //     tm.local_variance()[1] = 0.f;
+        //     tm.subspace()[0] = 0u;
+        //     tm.subspace()[1] = 0u;
+        //     nStripLong++;
+        // }
+            // For simplicity, treat all 1D measurements as long strips (1D in traccc)
+            tm.dimensions() = 1u;
+            tm.local_position()[0] = meas.parameters()[Acts::eBoundLoc0];
+            tm.local_position()[1] = 0.f;
+            tm.local_variance()[0] = meas.covariance()(0, 0);
+            tm.local_variance()[1] = 0.f;
+            tm.subspace()[0] = 0u;
+            tm.subspace()[1] = 0u;
+            nStripLong++;
+        }
+
+        tm.surface_link()       = detray::geometry::identifier(it->second);
+        tm.time()               = 0.f;
+        tm.diameter()           = 0.f;
+        tm.identifier()         = static_cast<unsigned int>(i); // store Acts index
+        tm.cluster_index()      = 0u;
+
+        actsToTracccIndexMap[i] = nConverted;
+        ++nConverted;
+    }
+
+    ACTS_INFO("ActsMeasToTracccAlg: converted " << nConverted
+            << " / " << actsMeasurements.size() << " measurements");
+    ACTS_INFO("  of which " << nPix << " pixel, "
+            << nStripShort << " short strip, "
+            << nStripLong << " long strip");
+
+    // ACTS_INFO("ActsMeasToTracccAlg: built " << tracccSpacepoints.size()
+    //         << " pixel spacepoints");
+    ACTS_INFO("ActsMeasToTracccAlg: built " << tracccMeasurements.size()
+            << " measurements");
+    ACTS_INFO("ActsMeasToTracccAlg: built " << actsToTracccIndexMap.size()
+            << " index mappings");
+
+    // m_outputTracccSpacepoints(ctx, std::move(tracccSpacepoints));
+    m_outputTracccMeasurements(ctx, std::move(tracccMeasurements));
+    m_outputActsToTracccIndexMap(ctx, std::move(actsToTracccIndexMap));
+    //   m_outputDetrayToActsMap(ctx, std::move(detrayToActsMap));
+    return ProcessCode::SUCCESS;
+}
+
+}  // namespace ActsExamples

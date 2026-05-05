@@ -12,6 +12,7 @@
 #include <string>
 
 #include <vecmem/memory/cuda/device_memory_resource.hpp>
+#include <vecmem/memory/cuda/managed_memory_resource.hpp>
 #include <vecmem/memory/cuda/host_memory_resource.hpp>
 #include <vecmem/memory/host_memory_resource.hpp>
 #include <vecmem/utils/copy.hpp>
@@ -39,12 +40,17 @@
 #include "traccc/geometry/detector_design_description.hpp"
 #include "traccc/geometry/host_detector.hpp"
 #include "traccc/io/read_cells.hpp"
+#include "traccc/io/read_measurements.hpp"
+#include "traccc/io/read_spacepoints.hpp"
 #include "traccc/io/read_detector.hpp"
 #include "traccc/io/read_detector_description.hpp"
 #include "traccc/io/read_magnetic_field.hpp"
 #include "traccc/seeding/detail/seeding_config.hpp"
 #include "traccc/seeding/detail/track_params_estimation_config.hpp"
 #include "traccc/utils/propagation.hpp"
+
+#include "Acts/Geometry/GeometryIdentifier.hpp"
+#include <unordered_map>
 
 namespace ActsExamples {
 
@@ -58,6 +64,7 @@ struct TracccChain {
   traccc::cuda::stream stream;
   vecmem::cuda::async_copy copy;
   vecmem::copy host_copy;
+  vecmem::cuda::managed_memory_resource mng_mr;
 
   traccc::detector_design_description::host host_det_descr;
   traccc::detector_conditions_description::host host_det_cond;
@@ -72,10 +79,12 @@ struct TracccChain {
   traccc::magnetic_field device_field;
 
   traccc::seedfinder_config seedfinder_cfg;
+
   traccc::seedfilter_config seedfilter_cfg;
   traccc::spacepoint_grid_config spacepoint_grid_cfg;
   traccc::track_params_estimation_config track_params_cfg;
   traccc::finding_config finding_cfg;
+
   traccc::fitting_config fitting_cfg;
   traccc::host::greedy_ambiguity_resolution_algorithm::config_type
       resolution_cfg;
@@ -89,11 +98,14 @@ struct TracccChain {
   traccc::cuda::greedy_ambiguity_resolution_algorithm resolution_cuda;
   traccc::cuda::kalman_fitting_algorithm fitting_cuda;
 
+  std::unordered_map<std::uint64_t, Acts::GeometryIdentifier> detrayToActsMap;
+
   TracccChain(const std::string& detector_file,
               const std::string& digitization_file,
               const std::string& conditions_file,
               const std::string& material_file, const std::string& grid_file,
               const std::string& bfield_file);
+
 };
 
 /// Per-event output counters.
@@ -105,7 +117,15 @@ struct EventResult {
   std::size_t n_found_tracks = 0;
   std::size_t n_resolved_tracks = 0;
   std::size_t n_fitted_tracks = 0;
+  std::optional<traccc::edm::measurement_collection::host> measurements;
+  std::optional<traccc::edm::spacepoint_collection::host> spacepoints;
+  std::optional<traccc::edm::track_container<traccc::default_algebra>::buffer> tracks;
+  std::unordered_map<std::uint64_t, Acts::GeometryIdentifier> detrayToActsMap;
 };
+
+EventResult processEvent(std::shared_ptr<TracccChain> chain,
+                         traccc::edm::measurement_collection::host&& measurements,
+                         traccc::edm::spacepoint_collection::host&& spacepoints);
 
 EventResult processEvent(std::shared_ptr<TracccChain> chain,
                          const std::string& data_directory,
