@@ -6,8 +6,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ActsExamples/Detray/DetrayPropagator.hpp"
+// #include "ActsExamples/Detray/DetrayPropagator.hpp"
 #include "ActsExamples/Detray/DetrayStore.hpp"
+#include "ActsExamples/Traccc/ActsToDetrayDetectorAlg.hpp"
 #include "ActsExamples/Propagation/PropagatorInterface.hpp"
 #include "ActsPlugins/Covfie/FieldConversion.hpp"
 #include "ActsPlugins/Detray/DetrayConversionUtils.hpp"
@@ -55,33 +56,54 @@ PYBIND11_MODULE(ActsExamplesPythonBindingsDetray, detray) {
   }
 
   /// Propagators
-  {
-    detray.def(
-        "createSlPropagatorHost",
-        [](const std::shared_ptr<const DetrayHostStore>& detrayStore,
-           bool sterile) {
-          using DetrayLineStepper =
-              detray::line_stepper<typename DetrayHostDetector::algebra_type>;
-          using DP = DetrayPropagator<DetrayLineStepper, DetrayHostStore>;
-          DP::Config cfg{detrayStore, sterile};
-          return std::shared_ptr<PropagatorInterface>(
-              std::make_shared<DP>(cfg));
-        },
-        "store"_a, "sterile"_a = false);
+  // {
+  //   detray.def(
+  //       "createSlPropagatorHost",
+  //       [](const std::shared_ptr<const DetrayHostStore>& detrayStore,
+  //          bool sterile) {
+  //         using DetrayLineStepper =
+  //             detray::line_stepper<typename DetrayHostDetector::algebra_type>;
+  //         using DP = DetrayPropagator<DetrayLineStepper, DetrayHostStore>;
+  //         DP::Config cfg{detrayStore, sterile};
+  //         return std::shared_ptr<PropagatorInterface>(
+  //             std::make_shared<DP>(cfg));
+  //       },
+  //       "store"_a, "sterile"_a = false);
 
-    detray.def(
-        "createConstBFieldPropagatorHost",
-        [](const std::shared_ptr<const DetrayHostStore>& detrayStore,
-           Covfie::ConstantField cfield, bool sterile) {
-          using Stepper =
-              detray::rk_stepper<Covfie::ConstantField::view_t,
-                                 typename DetrayHostDetector::algebra_type>;
-          using DP = DetrayPropagator<Stepper, DetrayHostStore,
-                                      Covfie::ConstantField::view_t>;
-          DP::Config cfg{detrayStore, sterile, cfield};
-          return std::shared_ptr<PropagatorInterface>(
-              std::make_shared<DP>(cfg));
-        },
-        "store"_a, "field"_a, "sterile"_a = false);
+  //   detray.def(
+  //       "createConstBFieldPropagatorHost",
+  //       [](const std::shared_ptr<const DetrayHostStore>& detrayStore,
+  //          Covfie::ConstantField cfield, bool sterile) {
+  //         using Stepper =
+  //             detray::rk_stepper<Covfie::ConstantField::view_t,
+  //                                typename DetrayHostDetector::algebra_type>;
+  //         using DP = DetrayPropagator<Stepper, DetrayHostStore,
+  //                                     Covfie::ConstantField::view_t>;
+  //         DP::Config cfg{detrayStore, sterile, cfield};
+  //         return std::shared_ptr<PropagatorInterface>(
+  //             std::make_shared<DP>(cfg));
+  //       },
+  //       "store"_a, "field"_a, "sterile"_a = false);
+  // }
+
+  /// Detector conversion
+  {
+    using Alg = ActsExamples::ActsToDetrayDetectorAlg;
+    using Cfg = Alg::Config;
+
+    auto cls = py::class_<Alg, ActsExamples::IAlgorithm,
+                          std::shared_ptr<Alg>>(detray, "ActsToDetrayDetectorAlg")
+      .def(py::init([](const Cfg& cfg, Acts::Logging::Level level) {
+        return std::make_shared<Alg>(
+            cfg, Acts::getDefaultLogger("ActsToDetrayDetectorAlg", level));
+      }));
+
+    py::class_<Cfg>(cls, "Config")
+      .def(py::init<>())
+      .def_readwrite("trackingGeometry",      &Cfg::trackingGeometry)
+      .def_readwrite("beampipeVolumeName",     &Cfg::beampipeVolumeName)
+      .def_readwrite("outputDetrayToActsMap",  &Cfg::outputDetrayToActsMap)
+      .def_readwrite("outputDetrayDetector",   &Cfg::outputDetrayDetector)
+      .def_readwrite("outputJsonDir",          &Cfg::outputJsonDir);
   }
 }
