@@ -78,6 +78,7 @@ def main():
     parser.add_argument("--ttbar", action="store_true")
     parser.add_argument("--ttbar-pu", type=int, default=200)
     parser.add_argument("--geant4", action="store_true")
+    parser.add_argument("--do-cpu", dest="do-cpu", action="store_true")
     args = parser.parse_args()
 
     args.output.mkdir(parents=True, exist_ok=True)
@@ -225,12 +226,9 @@ def main():
     a2tCfg = ActsMeasToTracccAlg.Config()
     a2tCfg.inputActsMeasurements      = "measurements"
     a2tCfg.detectorFile                = str(args.detector_file)
-    # a2tCfg.inputDetrayToActsMap       = "detray-to-acts-map"
     a2tCfg.outputDetrayToActsMap = "detray-to-acts-map"
     a2tCfg.trackingGeometry = trackingGeometry
     a2tCfg.outputTracccMeasurements   = "acts-traccc-measurements"
-    a2tCfg.outputActsToTracccIndexMap = "acts-to-traccc-index-map"
-    # a2tCfg.outputTracccSpacepoints   = "acts-traccc-spacepoints"
     s.addAlgorithm(ActsMeasToTracccAlg(a2tCfg, logLevel))
 
     geoSelectionConfigFile = actsDir / "Examples/Configs/odd-seeding-config.json"
@@ -257,7 +255,6 @@ def main():
     sp2tCfg = acts.examples.traccc.ActsSpToTracccAlg.Config()
     sp2tCfg.inputSpacePoints          = "spacepoints"
     sp2tCfg.inputActsMeasurements     = "measurements"
-    sp2tCfg.inputActsToTracccIndexMap = "acts-to-traccc-index-map"
     sp2tCfg.outputTracccSpacepoints   = "acts-traccc-spacepoints"
     s.addAlgorithm(acts.examples.traccc.ActsSpToTracccAlg(sp2tCfg, logLevel))
 
@@ -285,8 +282,8 @@ def main():
     # ── Step 5: Run traccc GPU chain ──────────────────────────────────────────
     seqCfg = TracccSeqAlgorithm.Config()
     seqCfg.detectorFile              = str(args.detector_file)
-    seqCfg.digitizationFile          = "" #str(args.digitization_file)
-    seqCfg.conditionsFile            = "" #str(args.conditions_file or pathlib.Path())
+    seqCfg.digitizationFile          = str(args.digitization_file)
+    seqCfg.conditionsFile            = str(args.conditions_file)
     seqCfg.materialFile              = str(args.material_file   or pathlib.Path())
     seqCfg.gridFile                  = str(args.grid_file       or pathlib.Path())
     seqCfg.bfieldFile                = str(args.bfield_file)
@@ -321,7 +318,7 @@ def main():
             RootTrackSummaryWriter(
                 level=logLevel,
                 inputTracks="traccc-acts-tracks",
-                inputParticles="particles_simulated",
+                inputParticles="particles_selected",
                 inputTrackParticleMatching="traccc_track_particle_matching",
                 filePath=str(args.output / "traccc_track_summary.root"),
                 writeCovMat=True,
@@ -332,13 +329,115 @@ def main():
             RootTrackFinderPerformanceWriter(
                 level=logLevel,
                 inputTracks="traccc-acts-tracks",
-                inputParticles="particles_simulated",
+                inputParticles="particles_selected",
                 inputParticleMeasurementsMap="particle_measurements_map",
                 inputTrackParticleMatching="traccc_track_particle_matching",
                 inputParticleTrackMatching="traccc_particle_track_matching",
                 filePath=str(args.output / "traccc_track_finder_performance.root"),
             )
         )
+
+    # ── Step 9: Do CPU chain + validation ────────────────────────────────────────────
+    # if args.do-cpu:
+    #     addSeeding(
+    #         s,
+    #         trackingGeometry,
+    #         field,
+    #         initialSigmas=[
+    #             1 * u.mm,
+    #             1 * u.mm,
+    #             1 * u.degree,
+    #             1 * u.degree,
+    #             0 * u.e / u.GeV,
+    #             1 * u.ns,
+    #         ],
+    #         initialSigmaQoverPt=0.1 * u.e / u.GeV,
+    #         initialSigmaPtRel=0.1,
+    #         initialVarInflation=[1.0] * 6,
+    #         particleHypothesis=acts.ParticleHypothesis.muon,
+    #         geoSelectionConfigFile=oddSeedingSel,
+    #         outputDirRoot=outputDir if args.output_root else None,
+    #         outputDirCsv=outputDir if args.output_csv else None,
+    #     )
+    #     addCKFTracks(
+    #         s,
+    #         trackingGeometry,
+    #         field,
+    #         TrackSelectorConfig(
+    #             pt=(1.0 * u.GeV if args.ttbar else 0.0, None),
+    #             absEta=(None, 3.0),
+    #             loc0=(-4.0 * u.mm, 4.0 * u.mm),
+    #             nMeasurementsMin=7,
+    #             maxHoles=2,
+    #             maxOutliers=2,
+    #         ),
+    #         CkfConfig(
+    #             chi2CutOffMeasurement=15.0,
+    #             chi2CutOffOutlier=25.0,
+    #             numMeasurementsCutOff=2,
+    #             seedDeduplication=True,
+    #             stayOnSeed=True,
+    #             pixelVolumes=[16, 17, 18],
+    #             stripVolumes=[23, 24, 25],
+    #             maxPixelHoles=1,
+    #             maxStripHoles=2,
+    #             constrainToVolumes=[
+    #                 2,  # beam pipe
+    #                 32,
+    #                 4,  # beam pip gap
+    #                 16,
+    #                 17,
+    #                 18,  # pixel
+    #                 20,  # PST
+    #                 23,
+    #                 24,
+    #                 25,  # short strip
+    #                 26,
+    #                 8,  # long strip gap
+    #                 28,
+    #                 29,
+    #                 30,  # long strip
+    #             ],
+    #         ),
+    #         outputDirRoot=outputDir if args.output_root else None,
+    #         outputDirCsv=outputDir if args.output_csv else None,
+    #         writeCovMat=True,
+    #     )
+
+    #     addAmbiguityResolution(
+    #         s,
+    #         AmbiguityResolutionConfig(
+    #             maximumSharedHits=3, maximumIterations=1000000, nMeasurementsMin=7
+    #         ),
+    #         outputDirRoot=outputDir if args.output_root else None,
+    #         outputDirCsv=outputDir if args.output_csv else None,
+    #         writeCovMat=True,
+    #     )
+
+    #     if args.output_root:
+    #         s.addWriter(
+    #             RootTrackSummaryWriter(
+    #                 level=logLevel,
+    #                 inputTracks="traccc-acts-tracks",
+    #                 inputParticles="particles_selected",
+    #                 inputTrackParticleMatching="traccc_track_particle_matching",
+    #                 filePath=str(args.output / "traccc_track_summary.root"),
+    #                 writeCovMat=True,
+    #             )
+    #         )
+
+    #         s.addWriter(
+    #             RootTrackFinderPerformanceWriter(
+    #                 level=logLevel,
+    #                 inputTracks="traccc-acts-tracks",
+    #                 inputParticles="particles_selected",
+    #                 inputParticleMeasurementsMap="particle_measurements_map",
+    #                 inputTrackParticleMatching="traccc_track_particle_matching",
+    #                 inputParticleTrackMatching="traccc_particle_track_matching",
+    #                 filePath=str(args.output / "traccc_track_finder_performance.root"),
+    #             )
+    #         )
+
 
     s.run()
 
