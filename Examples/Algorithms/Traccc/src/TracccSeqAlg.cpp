@@ -23,12 +23,12 @@ TracccSeqAlgorithm::TracccSeqAlgorithm(
   if (m_cfg.detectorFile.empty()) {
     throw std::invalid_argument("Detector geometry file is not configured");
   }
-  // if (m_cfg.conditionsFile.empty()) {
-  //   throw std::invalid_argument("Detector conditions file is not configured");
-  // }
-  // if (m_cfg.digitizationFile.empty()) {
-  //   throw std::invalid_argument("Detector digitization file is not configured");
-  // }
+  if (m_cfg.conditionsFile.empty()) {
+    throw std::invalid_argument("Detector conditions file is not configured");
+  }
+  if (m_cfg.digitizationFile.empty()) {
+    throw std::invalid_argument("Detector digitization file is not configured");
+  }
   if (m_cfg.bfieldFile.empty()) {
     throw std::invalid_argument("Magnetic field file is not configured");
   }
@@ -43,9 +43,6 @@ TracccSeqAlgorithm::TracccSeqAlgorithm(
   m_outputTracks.initialize(m_cfg.outputTracks);
   m_outputDetrayToActsMap.initialize(m_cfg.outputDetrayToActsMap);
 
-  // m_chain = std::make_shared<TracccChain>(
-  //     m_cfg.detectorFile, m_cfg.digitizationFile, m_cfg.conditionsFile,
-  //     m_cfg.materialFile, m_cfg.gridFile, m_cfg.bfieldFile);
 }
 
 ProcessCode TracccSeqAlgorithm::initialize() {
@@ -66,8 +63,8 @@ ProcessCode TracccSeqAlgorithm::execute(const AlgorithmContext& ctx) const {
       const auto& meas = m_inputMeasurements(ctx);
       const auto& sp = m_inputSpacepoints(ctx);
       result = processEvent(m_chain, std::move(
-          const_cast<traccc::edm::measurement_collection::host&>(meas)),
-        std::move(const_cast<traccc::edm::spacepoint_collection::host&>(sp)));
+          const_cast<traccc::edm::measurement_collection::host&>(meas)), std::move(
+          const_cast<traccc::edm::spacepoint_collection::host&>(sp)));
   } else {
       result = processEvent(m_chain, m_cfg.dataDirectory, ctx.eventNumber);
   }

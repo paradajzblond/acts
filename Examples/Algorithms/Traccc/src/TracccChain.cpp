@@ -132,25 +132,6 @@ TracccChain::TracccChain(const std::string& detector_file,
     //       << "\n  max_step_counts_for_next_surface=" << finding_cfg.max_step_counts_for_next_surface
     //       << "\n";
 
-    typename traccc::default_detector::host::geometry_context detrayContext{};
-
-    // host_detector_visitor<traccc::detector_type_list>(
-    // host_detector,
-
-    // [&]<typename detector_traits_t>(const typename detector_traits_t::host& det) {
-
-    //     int nPrint = 0;
-    //     for (const auto& surface : det.surfaces()) {
-    //         const Acts::GeometryIdentifier actsId(surface.source);
-    //         auto sf = detray::tracking_surface{det, surface};
-    //         (detrayToActsMap)[sf.identifier().value()] = actsId;
-    //         if(nPrint < 15 && sf.is_sensitive()){
-    //             std::cout << "detray=" << sf.identifier().value()
-    //             << " actsId=" << actsId << std::endl;
-    //             nPrint++;
-    //         }
-    //     }
-    // });
 
   traccc::io::read_magnetic_field(host_field, bfield_file);
   device_field = traccc::cuda::make_magnetic_field(host_field);
@@ -325,95 +306,92 @@ EventResult processEvent(
     traccc::edm::measurement_collection::host&& meas_host,
     traccc::edm::spacepoint_collection::host&& sp_host) {
 
-  EventResult result;
-  std::cout << "Processing event on input ACTS measurements." << std::endl;
-  result.n_measurements = meas_host.size();
-  result.n_spacepoints = sp_host.size();
-  for (std::size_t i = 0; i < meas_host.size(); ++i) {
-        auto m = meas_host.at(i);
-        std::cerr << "Traccc meas " << i
-                << " surface=" << m.surface_link().value()
-                << " dims=" << m.dimensions()
-                << " loc0=" << m.local_position()[0]
-                << " loc1=" << m.local_position()[1]
-                << " sub0=" << static_cast<int>(m.subspace()[0])
-                << " sub1=" << static_cast<int>(m.subspace()[1])
-                << " var0=" << m.local_variance()[0]
-                << " var1=" << m.local_variance()[1]
-                << "\n";
-    }
+    EventResult result;
+    std::cout << "Processing event on input ACTS measurements." << std::endl;
+    result.n_measurements = meas_host.size();
+    result.n_spacepoints = sp_host.size();
 
-  // Copy to device
+    // for (std::size_t i = 0; i < meas_host.size(); ++i) {
+    //     auto m = meas_host.at(i);
+    //     std::cerr << "Traccc meas " << i
+    //             << " surface=" << m.surface_link().value()
+    //             << " dims=" << m.dimensions()
+    //             << " loc0=" << m.local_position()[0]
+    //             << " loc1=" << m.local_position()[1]
+    //             << " sub0=" << static_cast<int>(m.subspace()[0])
+    //             << " sub1=" << static_cast<int>(m.subspace()[1])
+    //             << " var0=" << m.local_variance()[0]
+    //             << " var1=" << m.local_variance()[1]
+    //             << "\n";
+    // }
+
+    result.n_spacepoints = sp_host.size();
+    result.n_measurements = meas_host.size();
+
+    // Copy to device
     traccc::edm::spacepoint_collection::buffer sp_buf(
         static_cast<unsigned int>(sp_host.size()), chain->mr.main);
     chain->copy.setup(sp_buf)->wait();
     chain->copy(vecmem::get_data(sp_host), sp_buf)->wait();
 
-  traccc::edm::measurement_collection::buffer meas_buf(
-      static_cast<unsigned int>(meas_host.size()), chain->mr.main);
-  chain->copy.setup(meas_buf)->wait();
-  chain->copy(vecmem::get_data(meas_host), meas_buf)->wait();
+    traccc::edm::measurement_collection::buffer meas_buf(
+        static_cast<unsigned int>(meas_host.size()), chain->mr.main);
+    chain->copy.setup(meas_buf)->wait();
+    chain->copy(vecmem::get_data(meas_host), meas_buf)->wait();
 
-//   traccc::edm::spacepoint_collection::buffer sp_buf =
-//         chain->sf_cuda(chain->device_detector, pixel_meas_buf);
-//     chain->stream.synchronize();
+    std::cout << "TracccAlg: converted " << sp_host.size()
+            << " SPs from " << meas_host.size() << " measurements." << std::endl;
 
-//   traccc::edm::spacepoint_collection::host sp_host{chain->host_mr};
-//   chain->copy(sp_buf, sp_host)->wait();
-//   result.n_spacepoints = sp_host.size();
+    // for (std::size_t i = 0; i < sp_host.size(); ++i) {
+    //     auto sp = sp_host.at(i);
+    //     std::cerr << "SP " << i << ": x=" << sp.x() << " y=" << sp.y()
+    //             << " z=" << sp.z() << "\n";
+    // }
 
-//   std::cout << "TracccAlg: converted " << sp_host.size()
-//           << " SPs from " << meas_host.size() << " measurements." << std::endl;
+    // Seeding
+    traccc::edm::seed_collection::buffer seeds_buf = chain->sa_cuda(sp_buf);
+    chain->stream.synchronize();
 
-  for (std::size_t i = 0; i < sp_host.size(); ++i) {
-        auto sp = sp_host.at(i);
-        std::cerr << "SP " << i << ": x=" << sp.x() << " y=" << sp.y()
-                << " z=" << sp.z() << "\n";
-  }
-  // Seeding
-  traccc::edm::seed_collection::buffer seeds_buf = chain->sa_cuda(sp_buf);
-  chain->stream.synchronize();
+    traccc::edm::seed_collection::host seeds_host{chain->host_mr};
+    chain->copy(seeds_buf, seeds_host)->wait();
+    result.n_seeds = seeds_host.size();
 
-  traccc::edm::seed_collection::host seeds_host{chain->host_mr};
-  chain->copy(seeds_buf, seeds_host)->wait();
-  result.n_seeds = seeds_host.size();
+    // Track parameter estimation
+    traccc::bound_track_parameters_collection_types::buffer params_buf =
+        chain->tp_cuda(chain->device_field, meas_buf, sp_buf, seeds_buf);
+    chain->stream.synchronize();
 
-  // Track parameter estimation
-  traccc::bound_track_parameters_collection_types::buffer params_buf =
-      chain->tp_cuda(chain->device_field, meas_buf, sp_buf, seeds_buf);
-  chain->stream.synchronize();
+    // Track finding
+    traccc::edm::track_container<traccc::default_algebra>::buffer
+        track_candidates_buf = chain->finding_cuda(
+            chain->device_detector, chain->device_field, meas_buf, params_buf);
+    result.n_found_tracks = chain->host_copy.get_size(
+        track_candidates_buf.tracks);
 
-  // Track finding
-  traccc::edm::track_container<traccc::default_algebra>::buffer
-      track_candidates_buf = chain->finding_cuda(
-          chain->device_detector, chain->device_field, meas_buf, params_buf);
-  result.n_found_tracks = chain->host_copy.get_size(
-      track_candidates_buf.tracks);
+    // Store results
+    result.measurements.emplace(chain->host_mr);
+    const auto measurements_host_tmp =
+        chain->copy.to(meas_buf, chain->host_mr, nullptr,
+                        vecmem::copy::type::device_to_host);
+    chain->host_copy(measurements_host_tmp, result.measurements.value())->wait();
 
-  // Store results
-  result.measurements.emplace(chain->host_mr);
-  const auto measurements_host_tmp =
-      chain->copy.to(meas_buf, chain->host_mr, nullptr,
-                     vecmem::copy::type::device_to_host);
-  chain->host_copy(measurements_host_tmp, result.measurements.value())->wait();
+    traccc::edm::track_container<traccc::default_algebra>::buffer final_tracks;
+    final_tracks.tracks =
+        chain->copy.to(track_candidates_buf.tracks, chain->host_mr, nullptr,
+                        vecmem::copy::type::device_to_host);
+    final_tracks.states =
+        chain->copy.to(track_candidates_buf.states, chain->host_mr, nullptr,
+                        vecmem::copy::type::device_to_host);
+    final_tracks.measurements =
+        vecmem::get_data(result.measurements.value());
 
-  traccc::edm::track_container<traccc::default_algebra>::buffer final_tracks;
-  final_tracks.tracks =
-      chain->copy.to(track_candidates_buf.tracks, chain->host_mr, nullptr,
-                     vecmem::copy::type::device_to_host);
-  final_tracks.states =
-      chain->copy.to(track_candidates_buf.states, chain->host_mr, nullptr,
-                     vecmem::copy::type::device_to_host);
-  final_tracks.measurements =
-      vecmem::get_data(result.measurements.value());
+    std::cerr << "Finding: " << chain->host_copy.get_size(final_tracks.tracks)
+              << " track candidates from " << seeds_host.size() << " seeds\n";
 
-  std::cerr << "Finding: " << chain->host_copy.get_size(final_tracks.tracks)
-          << " track candidates from " << seeds_host.size() << " seeds\n";
-
-  result.n_fitted_tracks = chain->host_copy.get_size(final_tracks.tracks);
-  result.tracks.emplace(std::move(final_tracks));
-  result.detrayToActsMap = chain->detrayToActsMap;
-  return result;
+    result.n_fitted_tracks = chain->host_copy.get_size(final_tracks.tracks);
+    result.tracks.emplace(std::move(final_tracks));
+    result.detrayToActsMap = chain->detrayToActsMap;
+    return result;
 }
 
 }  // namespace ActsExamples

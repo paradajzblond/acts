@@ -23,11 +23,8 @@ class ActsMeasToTracccAlg final : public IAlgorithm {
     struct Config {
         std::string detectorFile    = "";
         std::string inputActsMeasurements      = "measurements";
-        // std::string outputTracccSpacepoints   = "acts-to-traccc-spacepoints";
         std::string outputDetrayToActsMap       = "detray-to-acts-map";
-        // std::string inputDetrayToActsMap       = "detray-to-acts-map";
         std::string outputTracccMeasurements   = "acts-to-traccc-measurements";
-        std::string outputActsToTracccIndexMap = "acts-to-traccc-index-map";
         std::shared_ptr<const Acts::TrackingGeometry> trackingGeometry;
     };
 
@@ -56,14 +53,9 @@ class ActsMeasToTracccAlg final : public IAlgorithm {
         m_inputActsMeasurements{this, "inputActsMeasurements"};
     WriteDataHandle<std::unordered_map<std::uint64_t, Acts::GeometryIdentifier>>
         m_outputDetrayToActsMap{this, "outputDetrayToActsMap"};
-    //   ReadDataHandle<std::unordered_map<std::uint64_t, Acts::GeometryIdentifier>>
-    //       m_inputDetrayToActsMap{this, "inputDetrayToActsMap"};
     WriteDataHandle<traccc::edm::measurement_collection::host>
         m_outputTracccMeasurements{this, "outputTracccMeasurements"};
-    WriteDataHandle<std::unordered_map<std::size_t, std::size_t>>
-        m_outputActsToTracccIndexMap{this, "outputActsToTracccIndexMap"};
-    // WriteDataHandle<traccc::edm::spacepoint_collection::host>
-    //     m_outputTracccSpacepoints{this, "outputTracccSpacepoints"};
+
 };
 
 }  // namespace ActsExamples

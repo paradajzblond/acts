@@ -18,7 +18,6 @@ class ActsSpToTracccAlg final : public IAlgorithm {
   struct Config {
     std::string inputSpacePoints          = "spacepoints";
     std::string inputActsMeasurements     = "measurements";
-    std::string inputActsToTracccIndexMap = "acts-to-traccc-index-map";
     std::string outputTracccSpacepoints   = "acts-traccc-spacepoints";
   };
 
@@ -39,8 +38,6 @@ class ActsSpToTracccAlg final : public IAlgorithm {
       m_inputSpacePoints{this, "inputSpacePoints"};
   ReadDataHandle<MeasurementContainer>
       m_inputActsMeasurements{this, "inputActsMeasurements"};
-  ReadDataHandle<std::unordered_map<std::size_t, std::size_t>>
-      m_inputActsToTracccIndexMap{this, "inputActsToTracccIndexMap"};
   WriteDataHandle<traccc::edm::spacepoint_collection::host>
       m_outputTracccSpacepoints{this, "outputTracccSpacepoints"};
 };

@@ -31,7 +31,6 @@ class TracccTrackToActsAlg final : public IAlgorithm {
     std::string inputTracccTracks;
     std::string outputActsTracks = "traccc-acts-tracks";
     std::string inputDetrayToActsMap = "detray-to-acts-map";
-    std::string inputActsToTracccIndexMap = "acts-to-traccc-index-map";
 
     /// Acts tracking geometry — used to build the surface map.
     std::shared_ptr<const Acts::TrackingGeometry> trackingGeometry;
@@ -55,8 +54,6 @@ class TracccTrackToActsAlg final : public IAlgorithm {
     m_inputTracccTracks{this, "InputTracccTracks"};
   ReadDataHandle<std::unordered_map<std::uint64_t, Acts::GeometryIdentifier>>
     m_inputDetrayToActsMap{this, "InputDetrayToActsMap"};
-  ReadDataHandle<std::unordered_map<std::size_t, std::size_t>>
-    m_inputActsToTracccIndexMap{this, "InputActsToTracccIndexMap"};
   WriteDataHandle<Acts::TrackContainer<Acts::ConstVectorTrackContainer,
                                      Acts::ConstVectorMultiTrajectory,
                                      std::shared_ptr>>

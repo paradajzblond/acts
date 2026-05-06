@@ -40,7 +40,7 @@ TracccTrackToActsAlg::TracccTrackToActsAlg(
   m_outputActsTracks.initialize(m_cfg.outputActsTracks);
   m_inputTracccTracks.initialize(m_cfg.inputTracccTracks);
   m_inputDetrayToActsMap.initialize(m_cfg.inputDetrayToActsMap);
-  m_inputActsToTracccIndexMap.initialize(m_cfg.inputActsToTracccIndexMap);
+
 }
 
 // Convert a traccc host track container into a mutable Acts TrackContainer.
@@ -51,8 +51,7 @@ std::size_t convertTracks(
     traccc::edm::track_container<traccc::default_algebra>::const_view tracccTracksView,
     Acts::TrackContainer<track_container_t, trajectory_t, holder_t>& outputTracks,
     const std::unordered_map<std::uint64_t, Acts::GeometryIdentifier>& detrayToActsMap,
-    const std::unordered_map<Acts::GeometryIdentifier, const Acts::Surface*>& surfaceMap,
-    const std::unordered_map<std::size_t, std::size_t>& tracccToActsIndexMap = {}) {
+    const std::unordered_map<Acts::GeometryIdentifier, const Acts::Surface*>& surfaceMap) {
 
   traccc::edm::track_container<traccc::default_algebra>::const_device
       tracks_device(tracccTracksView);
@@ -152,14 +151,9 @@ std::size_t convertTracks(
       tsos.smoothed()           = optParams->parameters();
       tsos.smoothedCovariance() = optParams->covariance().value();
       tsos.typeFlags().setHasMeasurement(true);
+      ActsExamples::IndexSourceLink sl(optParams->referenceSurface().geometryId(), meas.identifier());
+      tsos.setUncalibratedSourceLink(Acts::SourceLink{sl}); // store original Acts measurement index in source link
 
-      if (!tracccToActsIndexMap.empty()) {
-          const unsigned int tracccMeasIdx = state.measurement_index();
-          // meas.identifier() stores original Acts measurement index
-          const unsigned int actsIdx = meas.identifier();
-          ActsExamples::IndexSourceLink sl(optParams->referenceSurface().geometryId(), actsIdx);
-          tsos.setUncalibratedSourceLink(Acts::SourceLink{sl});
-      }
     }
 
     if (!trackOk) {
@@ -185,12 +179,12 @@ ProcessCode TracccTrackToActsAlg::execute(const AlgorithmContext& ctx) const {
 
     const auto& tracccTracks = m_inputTracccTracks(ctx);
     const auto& detrayToActsMap = m_inputDetrayToActsMap(ctx);
-    const auto& actsToTracccIndexMap = m_inputActsToTracccIndexMap(ctx);
+    // const auto& actsToTracccIndexMap = m_inputActsToTracccIndexMap(ctx);
 
-    if (!actsToTracccIndexMap.empty()) {
-        ACTS_INFO("TracccTrackToActsAlg: got actsToTracccIndexMap with "
-                 << actsToTracccIndexMap.size() << " entries");
-    }
+    // if (!actsToTracccIndexMap.empty()) {
+    //     ACTS_INFO("TracccTrackToActsAlg: got actsToTracccIndexMap with "
+    //              << actsToTracccIndexMap.size() << " entries");
+    // }
 
     auto trackBackend    = std::make_shared<Acts::VectorTrackContainer>();
     auto trajectoryBackend = std::make_shared<Acts::VectorMultiTrajectory>();
@@ -204,8 +198,7 @@ ProcessCode TracccTrackToActsAlg::execute(const AlgorithmContext& ctx) const {
       tracccTracks,
       mutableTracks,
       detrayToActsMap,
-      m_surfaceMap,
-      actsToTracccIndexMap);
+      m_surfaceMap);
 
     traccc::edm::track_container<traccc::default_algebra>::const_device tmp(tracccTracks);
     ACTS_INFO("TracccTrackToActsAlg: input has "

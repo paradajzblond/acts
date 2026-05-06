@@ -66,12 +66,9 @@ PYBIND11_MODULE(ActsExamplesPythonBindingsTraccc, traccc) {
       .def(py::init<>())
       .def_readwrite("detectorFile",             &Cfg::detectorFile)
       .def_readwrite("inputActsMeasurements",   &Cfg::inputActsMeasurements)
-      // .def_readwrite("inputDetrayToActsMap", &Cfg::inputDetrayToActsMap)
       .def_readwrite("outputDetrayToActsMap", &Cfg::outputDetrayToActsMap)
       .def_readwrite("trackingGeometry", &Cfg::trackingGeometry)
-      .def_readwrite("outputTracccMeasurements",         &Cfg::outputTracccMeasurements)
-      .def_readwrite("outputActsToTracccIndexMap",&Cfg::outputActsToTracccIndexMap);
-      // .def_readwrite("outputTracccSpacepoints",   &Cfg::outputTracccSpacepoints);
+      .def_readwrite("outputTracccMeasurements",         &Cfg::outputTracccMeasurements);
   }
   {
     using Alg = ActsExamples::ActsSpToTracccAlg;
@@ -88,7 +85,6 @@ PYBIND11_MODULE(ActsExamplesPythonBindingsTraccc, traccc) {
       .def(py::init<>())
       .def_readwrite("inputSpacePoints",   &Cfg::inputSpacePoints)
       .def_readwrite("inputActsMeasurements",   &Cfg::inputActsMeasurements)
-      .def_readwrite("inputActsToTracccIndexMap", &Cfg::inputActsToTracccIndexMap)
       .def_readwrite("outputTracccSpacepoints",         &Cfg::outputTracccSpacepoints);
   }
   {
