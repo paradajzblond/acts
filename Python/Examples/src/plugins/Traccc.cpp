@@ -7,6 +7,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Acts/Utilities/Logger.hpp"
+#include "ActsExamples/Traccc/ActsMeasToTracccAlg.hpp"
 #include "ActsExamples/Traccc/TracccBackend.hpp"
 #include "ActsExamples/Traccc/TracccCopyAlgs.hpp"
 #include "ActsExamples/Traccc/TracccCopyTool.hpp"
@@ -17,6 +18,7 @@
 #include "ActsExamples/Traccc/TracccDeviceTrackParamEstimationAlg.hpp"
 #include "ActsExamples/Traccc/TracccDeviceTripletSeedingAlg.hpp"
 #include "ActsExamples/Traccc/TracccEventData.hpp"
+#include "ActsExamples/Traccc/TracccTrackToActsAlg.hpp"
 #include "ActsPython/Utilities/Helpers.hpp"
 #include "ActsPython/Utilities/Macros.hpp"
 
@@ -133,6 +135,10 @@ void addCopyTool(py::module_& m) {
 }
 
 void addAlgorithms(py::module_& m) {
+  ACTS_PYTHON_DECLARE_ALGORITHM(ActsMeasToTracccAlg, m, "ActsMeasToTracccAlg",
+                                detector, inputMeasurements,
+                                outputMeasurements);
+
   // Host <-> device copies, one instance per traccc collection
   {
     using Alg = TracccHostToDeviceCopyAlg<traccc::edm::measurement_collection>;
@@ -192,6 +198,9 @@ void addAlgorithms(py::module_& m) {
                                 inputMeasurements, inputTrackParameters,
                                 outputTracks, finding);
 
+  ACTS_PYTHON_DECLARE_ALGORITHM(TracccTrackToActsAlg, m, "TracccTrackToActsAlg",
+                                detector, inputTracks, inputMeasurements,
+                                outputTracks);
 }
 
 }  // namespace
