@@ -50,8 +50,8 @@ ProcessCode TracccTrackToActsAlg::execute(const AlgorithmContext& ctx) const {
   };
 
   const TracccTrackContainer::const_data tracksData(hostTracks);
-  const ActsPlugins::Traccc::TrackConversionStatistics stats =
-      ActsPlugins::Traccc::convertTracks(
+  const ActsPlugins::TracccBoundTrackParameters::TrackConversionStatistics stats =
+      ActsPlugins::TracccBoundTrackParameters::convertTracks(
           TracccTrackContainer::const_view(tracksData),
           detector.hostDetector(), trackingGeometry, makeSourceLink,
           actsTracks);
