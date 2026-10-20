@@ -48,12 +48,14 @@ ProcessCode TracccTrackToActsAlg::execute(const AlgorithmContext& ctx) const {
     return Acts::SourceLink{IndexSourceLink(
         surface.geometryId(), measurements.at(measurementIndex).identifier())};
   };
+  const ActsPlugins::TracccBoundTrackParameters::SourceLinkCreator
+      sourceLinkCreator{makeSourceLink};
 
   const TracccTrackContainer::const_data tracksData(hostTracks);
   const ActsPlugins::TracccBoundTrackParameters::TrackConversionStatistics stats =
       ActsPlugins::TracccBoundTrackParameters::convertTracks(
           TracccTrackContainer::const_view(tracksData),
-          detector.hostDetector(), trackingGeometry, makeSourceLink,
+          detector.hostDetector(), trackingGeometry, sourceLinkCreator,
           actsTracks);
 
   ACTS_DEBUG("Traccc track conversion: " << stats);
